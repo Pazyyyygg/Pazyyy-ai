@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pazyy AI Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js for Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            accent: '#8b5cf6',
+                            cyan: '#06b6d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.4);
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .prose pre {
+            background-color: #0f172a !important;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .prose code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+        }
+        .prose p {
+            margin-bottom: 0.75rem;
+            line-height: 1.65;
+        }
+        .prose p:last-child {
+            margin-bottom: 0;
+        }
+        .prose ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .prose ol {
+            list-style-type: decimal;
+            padding-left: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .prose strong {
+            color: #ffffff;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex overflow-hidden selection:bg-indigo-600 selection:text-white">
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden transition-opacity duration-300"></div>
+
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-slate-900/90 border-r border-slate-800/80 z-40 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0 glass-panel">
+        <!-- Sidebar Header -->
+        <div class="p-4 flex items-center justify-between border-b border-slate-800/80">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-indigo-500/20">
+                    P
+                </div>
+                <div>
+                    <h1 class="font-bold text-base tracking-wide text-white">Pazyy AI Studio</h1>
+                    <p class="text-xs text-slate-400">Smart AI Assistant</p>
+                </div>
+            </div>
+            <button id="close-sidebar-btn" class="md:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- New Chat Button -->
+        <div class="p-3">
+            <button id="new-chat-btn" class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium flex items-center justify-center gap-2.5 transition-all duration-200 shadow-lg shadow-indigo-600/25 active:scale-[0.98]">
+                <i class="fa-solid fa-plus text-sm"></i>
+                <span>Obrolan Baru</span>
+            </button>
+        </div>
+
+        <!-- Chat History List -->
+        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1" id="chat-history-container">
+            <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Riwayat Chat</div>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="p-3 border-t border-slate-800/80 bg-slate-950/40 space-y-2">
+            <button id="open-api-modal-btn" class="w-full p-2.5 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 text-xs font-medium text-slate-300 flex items-center justify-between transition-colors">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-key text-indigo-400"></i>
+                    <span>Gemini API Key</span>
+                </span>
+                <span id="api-status-badge" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            </button>
+
+            <button id="export-chat-btn" class="w-full p-2.5 rounded-xl border border-slate-800 bg-slate-800/20 hover:bg-slate-800/60 text-xs font-medium text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition-colors">
+                <i class="fa-solid fa-download"></i>
+                <span>Ekspor History Chat</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden bg-slate-950">
+        
+        <!-- Header -->
+        <header class="h-16 border-b border-slate-800/80 px-4 md:px-6 flex items-center justify-between glass-panel z-20">
+            <div class="flex items-center gap-3">
+                <button id="open-sidebar-btn" class="md:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                        <div class="absolute inset-0 rounded-full bg-emerald-500 blur-sm opacity-60 animate-pulse"></div>
+                    </div>
+                    <div>
+                        <h2 class="font-semibold text-sm md:text-base text-white">Pazyy AI Studio</h2>
+                        <!-- Model Selector -->
+                        <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                            <span>Model:</span>
+                            <select id="model-select" class="bg-slate-900 border border-slate-700/70 text-slate-200 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:border-indigo-500">
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2">
+                <button id="clear-chat-btn" class="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 text-xs md:text-sm flex items-center gap-1.5 transition-colors" title="Bersihkan Percakapan">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span class="hidden sm:inline">Reset Chat</span>
+                </button>
+                <button id="tts-toggle-btn" class="p-2 text-slate-400 hover:text-indigo-400 rounded-lg hover:bg-slate-800 text-xs md:text-sm flex items-center gap-1.5 transition-colors" title="Toggle Auto Text-To-Speech">
+                    <i class="fa-solid fa-volume-xmark" id="tts-icon"></i>
+                    <span class="hidden sm:inline">Suara</span>
+                </button>
+            </div>
+        </header>
+
+        <div id="messages-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
+            
+            <!-- Welcome View -->
+            <div id="welcome-view" class="max-w-2xl mx-auto py-12 px-2 flex flex-col items-center text-center space-y-6">
+                <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-500 p-1 shadow-xl shadow-indigo-500/20">
+                    <div class="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center">
+                        <span class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">P</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-2">
+                    <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Selamat datang di Pazyy AI Studio</h3>
+                    <p class="text-slate-400 text-sm max-w-md mx-auto">Satu asisten cerdas untuk segala kebutuhan coding, penulisan kreatif, riset, dan analisis data Anda.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full pt-4">
+                    <button class="preset-prompt p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:bg-slate-800/80 hover:border-indigo-500/50 text-left transition-all duration-200 group">
+                        <div class="flex items-center gap-3 mb-1">
+                            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                                <i class="fa-solid fa-code text-sm"></i>
+                            </div>
+                            <span class="font-semibold text-sm text-slate-200">Coding & Web Dev</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Buat komponen UI Tailwind CSS responsif dan interaktif</p>
+                    </button>
+
+                    <button class="preset-prompt p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:bg-slate-800/80 hover:border-indigo-500/50 text-left transition-all duration-200 group">
+                        <div class="flex items-center gap-3 mb-1">
+                            <div class="p-2 rounded-lg bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                <i class="fa-solid fa-brain text-sm"></i>
+                            </div>
+                            <span class="font-semibold text-sm text-slate-200">Penjelasan Konsep</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Jelaskan cara kerja Machine Learning secara sederhana</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 md:p-4 border-t border-slate-800/80 bg-slate-950/90 glass-panel z-20">
+            <div class="max-w-4xl mx-auto relative">
+                <form id="chat-form" class="relative flex items-end gap-2 bg-slate-900 border border-slate-700/80 focus-within:border-indigo-500 rounded-2xl p-2 md:p-2.5 transition-all duration-200 shadow-xl">
+                    <button type="button" id="voice-btn" class="p-2.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-800 rounded-xl transition-colors flex-shrink-0" title="Input Suara">
+                        <i class="fa-solid fa-microphone text-base" id="mic-icon"></i>
+                    </button>
+
+                    <textarea 
+                        id="user-input" 
+                        rows="1" 
+                        placeholder="Ketik pesan untuk Pazyy AI..." 
+                        class="w-full bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none resize-none max-h-36 py-2 px-1 text-sm md:text-base leading-relaxed"
+                    ></textarea>
+
+                    <button 
+                        type="submit" 
+                        id="send-btn" 
+                        disabled 
+                        class="p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white rounded-xl transition-all duration-200 flex-shrink-0 shadow-md shadow-indigo-600/30 active:scale-95 flex items-center justify-center w-10 h-10"
+                    >
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </button>
+                </form>
+
+                <p class="text-[11px] text-slate-500 text-center mt-2">
+                    Pazyy AI Studio menggunakan Google Gemini API.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <div id="api-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative">
+            <button id="close-api-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl">
+                    <i class="fa-solid fa-key text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Pengaturan API Key</h3>
+                    <p class="text-xs text-slate-400">Gunakan Google Gemini API Key Anda</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Pazyy AI memerlukan Gemini API key untuk memproses AI secara otomatis. Dapatkan API Key secara gratis dari Google AI Studio.
+            </p>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-300">Gemini API Key</label>
+                <input 
+                    type="password" 
+                    id="api-key-input" 
+                    placeholder="AIzaSy..." 
+                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono"
+                />
+            </div>
+
+            <div id="test-key-status" class="text-xs hidden"></div>
+
+            <div class="flex items-center justify-between pt-2">
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-indigo-400 hover:underline flex items-center gap-1.5 font-medium">
+                    <span>Dapatkan API Key Gratis</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                </a>
+                <div class="flex gap-2">
+                    <button id="test-api-key-btn" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium transition-colors">
+                        Uji Key
+                    </button>
+                    <button id="save-api-key-btn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-colors shadow-md shadow-indigo-600/30">
+                        Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            apiKey: localStorage.getItem('pazyy_gemini_key') || '',
+            chats: JSON.parse(localStorage.getItem('pazyy_chat_history') || '[]'),
+            currentChatId: null,
+            selectedModel: localStorage.getItem('pazyy_selected_model') || 'gemini-2.5-flash',
+            isGenerating: false,
+            ttsEnabled: false,
+            isListening: false,
+            speechSynth: window.speechSynthesis
+        };
+
+        const SYSTEM_INSTRUCTION = "Anda adalah Pazyy AI, asisten kecerdasan buatan dari Pazyy AI Studio yang cerdas, sopan, dan sangat ahli dalam pemrograman, riset, serta penulisan. Berikan jawaban yang terstruktur, jelas, akurat, dan gunakan format Markdown yang rapi.";
+
+        const elements = {
+            sidebar: document.getElementById('sidebar'),
+            mobileOverlay: document.getElementById('mobile-overlay'),
+            openSidebarBtn: document.getElementById('open-sidebar-btn'),
+            closeSidebarBtn: document.getElementById('close-sidebar-btn'),
+            newChatBtn: document.getElementById('new-chat-btn'),
+            chatHistoryContainer: document.getElementById('chat-history-container'),
+            messagesContainer: document.getElementById('messages-container'),
+            welcomeView: document.getElementById('welcome-view'),
+            chatForm: document.getElementById('chat-form'),
+            userInput: document.getElementById('user-input'),
+            sendBtn: document.getElementById('send-btn'),
+            voiceBtn: document.getElementById('voice-btn'),
+            micIcon: document.getElementById('mic-icon'),
+            clearChatBtn: document.getElementById('clear-chat-btn'),
+            exportChatBtn: document.getElementById('export-chat-btn'),
+            ttsToggleBtn: document.getElementById('tts-toggle-btn'),
+            ttsIcon: document.getElementById('tts-icon'),
+            modelSelect: document.getElementById('model-select'),
+            apiModal: document.getElementById('api-modal'),
+            openApiModalBtn: document.getElementById('open-api-modal-btn'),
+            closeApiModalBtn: document.getElementById('close-api-modal-btn'),
+            apiKeyInput: document.getElementById('api-key-input'),
+            saveApiKeyBtn: document.getElementById('save-api-key-btn'),
+            testApiKeyBtn: document.getElementById('test-api-key-btn'),
+            testKeyStatus: document.getElementById('test-key-status'),
+            apiStatusBadge: document.getElementById('api-status-badge')
+        };
+
+        marked.setOptions({
+            highlight: function(code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            breaks: true
+        });
+
+        function initApp() {
+            elements.modelSelect.value = state.selectedModel;
+            setupEventListeners();
+            updateApiStatusBadge();
+            renderChatHistory();
+        }
+
+        function setupEventListeners() {
+            elements.openSidebarBtn.addEventListener('click', toggleSidebar);
+            elements.closeSidebarBtn.addEventListener('click', toggleSidebar);
+            elements.mobileOverlay.addEventListener('click', toggleSidebar);
+
+            elements.newChatBtn.addEventListener('click', startNewChat);
+
+            elements.modelSelect.addEventListener('change', (e) => {
+                state.selectedModel = e.target.value;
+                localStorage.setItem('pazyy_selected_model', state.selectedModel);
+            });
+
+            elements.openApiModalBtn.addEventListener('click', () => {
+                elements.apiKeyInput.value = state.apiKey;
+                elements.testKeyStatus.classList.add('hidden');
+                elements.apiModal.classList.remove('hidden');
+            });
+
+            elements.closeApiModalBtn.addEventListener('click', () => {
+                elements.apiModal.classList.add('hidden');
+            });
+
+            elements.saveApiKeyBtn.addEventListener('click', saveApiKey);
+            elements.testApiKeyBtn.addEventListener('click', testApiKey);
+
+            elements.userInput.addEventListener('input', () => {
+                elements.userInput.style.height = 'auto';
+                elements.userInput.style.height = Math.min(elements.userInput.scrollHeight, 144) + 'px';
+                elements.sendBtn.disabled = !elements.userInput.value.trim() || state.isGenerating;
+            });
+
+            elements.userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (elements.userInput.value.trim() && !state.isGenerating) {
+                        handleFormSubmit();
+                    }
+                }
+            });
+
+            elements.chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleFormSubmit();
+            });
+
+            document.querySelectorAll('.preset-prompt').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const promptText = btn.querySelector('p').textContent;
+                    elements.userInput.value = promptText;
+                    elements.userInput.dispatchEvent(new Event('input'));
+                    handleFormSubmit();
+                });
+            });
+
+            elements.clearChatBtn.addEventListener('click', clearCurrentChat);
+            elements.exportChatBtn.addEventListener('click', exportChatHistory);
+            elements.ttsToggleBtn.addEventListener('click', toggleTTS);
+            elements.voiceBtn.addEventListener('click', toggleSpeechRecognition);
+        }
+
+        function toggleSidebar() {
+            elements.sidebar.classList.toggle('-translate-x-full');
+            elements.mobileOverlay.classList.toggle('hidden');
+        }
+
+        function updateApiStatusBadge() {
+            if (state.apiKey) {
+                elements.apiStatusBadge.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50';
+            } else {
+                elements.apiStatusBadge.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping';
+            }
+        }
+
+        function saveApiKey() {
+            const val = elements.apiKeyInput.value.trim();
+            state.apiKey = val;
+            localStorage.setItem('pazyy_gemini_key', val);
+            updateApiStatusBadge();
+            elements.apiModal.classList.add('hidden');
+        }
+
+        async function testApiKey() {
+            const val = elements.apiKeyInput.value.trim();
+            if (!val) {
+                elements.testKeyStatus.className = 'text-xs text-rose-400 block';
+                elements.testKeyStatus.textContent = 'Harap masukkan API Key terlebih dahulu.';
+                return;
+            }
+
+            elements.testKeyStatus.className = 'text-xs text-slate-400 block';
+            elements.testKeyStatus.textContent = 'Menguji API Key...';
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${val}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
+                });
+
+                if (res.ok) {
+                    elements.testKeyStatus.className = 'text-xs text-emerald-400 block';
+                    elements.testKeyStatus.textContent = 'API Key valid & siap digunakan!';
+                } else {
+                    const err = await res.json();
+                    elements.testKeyStatus.className = 'text-xs text-rose-400 block';
+                    elements.testKeyStatus.textContent = `Error: ${err.error?.message || 'Key tidak valid'}`;
+                }
+            } catch (e) {
+                elements.testKeyStatus.className = 'text-xs text-rose-400 block';
+                elements.testKeyStatus.textContent = 'Terjadi kesalahan koneksi saat pengujian.';
+            }
+        }
+
+        function startNewChat() {
+            state.currentChatId = null;
+            elements.messagesContainer.innerHTML = '';
+            elements.messagesContainer.appendChild(elements.welcomeView);
+            elements.welcomeView.classList.remove('hidden');
+            renderChatHistory();
+            if (window.innerWidth < 768) toggleSidebar();
+        }
+
+        function renderChatHistory() {
+            const container = elements.chatHistoryContainer;
+            container.innerHTML = '<div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Riwayat Chat</div>';
+
+            if (state.chats.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'px-3 py-4 text-xs text-slate-500 text-center italic';
+                empty.textContent = 'Belum ada percakapan';
+                container.appendChild(empty);
+                return;
+            }
+
+            state.chats.forEach(chat => {
+                const btn = document.createElement('div');
+                const isActive = chat.id === state.currentChatId;
+                btn.className = `group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+                    isActive ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800/60'
+                }`;
+
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5 overflow-hidden flex-1">
+                        <i class="fa-regular fa-message text-sm text-slate-400 group-hover:text-indigo-400"></i>
+                        <span class="truncate">${escapeHtml(chat.title)}</span>
+                    </div>
+                    <button class="delete-chat-btn opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 text-slate-500 transition-opacity" data-id="${chat.id}">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                `;
+
+                btn.addEventListener('click', (e) => {
+                    if (!e.target.closest('.delete-chat-btn')) {
+                        loadChat(chat.id);
+                    }
+                });
+
+                btn.querySelector('.delete-chat-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteChat(chat.id);
+                });
+
+                container.appendChild(btn);
+            });
+        }
+
+        function loadChat(chatId) {
+            const chat = state.chats.find(c => c.id === chatId);
+            if (!chat) return;
+
+            state.currentChatId = chatId;
+            elements.welcomeView.classList.add('hidden');
+            elements.messagesContainer.innerHTML = '';
+
+            chat.messages.forEach(msg => {
+                appendMessageToUI(msg.role, msg.content, false);
+            });
+
+            renderChatHistory();
+            scrollToBottom();
+            if (window.innerWidth < 768) toggleSidebar();
+        }
+
+        function deleteChat(chatId) {
+            state.chats = state.chats.filter(c => c.id !== chatId);
+            localStorage.setItem('pazyy_chat_history', JSON.stringify(state.chats));
+            if (state.currentChatId === chatId) {
+                startNewChat();
+            } else {
+                renderChatHistory();
+            }
+        }
+
+        function clearCurrentChat() {
+            if (state.currentChatId) {
+                deleteChat(state.currentChatId);
+            } else {
+                startNewChat();
+            }
+        }
+
+        function exportChatHistory() {
+            if (state.chats.length === 0) {
+                alert("Tidak ada riwayat obrolan untuk diekspor.");
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.chats, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `pazyy_ai_history_${Date.now()}.json`);
+            dlAnchorElem.click();
+        }
+
+        async function handleFormSubmit() {
+            const userText = elements.userInput.value.trim();
+            if (!userText || state.isGenerating) return;
+
+            if (!state.apiKey) {
+                elements.apiModal.classList.remove('hidden');
+                return;
+            }
+
+            elements.userInput.value = '';
+            elements.userInput.style.height = 'auto';
+            elements.sendBtn.disabled = true;
+
+            elements.welcomeView.classList.add('hidden');
+
+            let currentChat = state.chats.find(c => c.id === state.currentChatId);
+            if (!currentChat) {
+                const newId = 'chat_' + Date.now();
+                currentChat = {
+                    id: newId,
+                    title: userText.slice(0, 28) + (userText.length > 28 ? '...' : ''),
+                    messages: []
+                };
+                state.chats.unshift(currentChat);
+                state.currentChatId = newId;
+            }
+
+            currentChat.messages.push({ role: 'user', content: userText });
+            appendMessageToUI('user', userText);
+            saveChatsToStorage();
+
+            state.isGenerating = true;
+            const typingIndicator = appendTypingIndicator();
+            scrollToBottom();
+
+            try {
+                const responseText = await fetchGeminiWithFallback(currentChat.messages);
+                
+                typingIndicator.remove();
+                currentChat.messages.push({ role: 'model', content: responseText });
+                saveChatsToStorage();
+
+                appendMessageToUI('model', responseText, true);
+
+                if (state.ttsEnabled) {
+                    speakText(responseText);
+                }
+
+            } catch (error) {
+                typingIndicator.remove();
+                console.error("API Error:", error);
+                appendMessageToUI('model', `**Terjadi Kesalahan:** ${error.message}`);
+            } finally {
+                state.isGenerating = false;
+                elements.sendBtn.disabled = !elements.userInput.value.trim();
+                renderChatHistory();
+            }
+        }
+
+        async function fetchGeminiWithFallback(messages) {
+            const modelsToTry = [
+                state.selectedModel,
+                'gemini-2.5-flash',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro'
+            ].filter((v, i, a) => a.indexOf(v) === i);
+
+            let lastError = null;
+
+            for (const model of modelsToTry) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${state.apiKey}`;
+                    const formattedContents = messages.map(msg => ({
+                        role: msg.role === 'user' ? 'user' : 'model',
+                        parts: [{ text: msg.content }]
+                    }));
+
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: formattedContents,
+                            systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
+                        })
+                    });
+
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.error?.message || `HTTP ${res.status}`);
+                    }
+
+                    const data = await res.json();
+                    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        return data.candidates[0].content.parts[0].text;
+                    }
+                } catch (e) {
+                    console.warn(`Model ${model} gagal:`, e.message);
+                    lastError = e;
+                }
+            }
+
+            throw lastError || new Error("Gagal menghubungkan ke Google Gemini API.");
+        }
+
+        function appendMessageToUI(role, content, animate = false) {
+            const isUser = role === 'user';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex gap-3 md:gap-4 max-w-4xl mx-auto ${isUser ? 'justify-end' : 'justify-start'}`;
+
+            const avatarHTML = isUser ? `
+                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-md">
+                    U
+                </div>
+            ` : `
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-md">
+                    P
+                </div>
+            `;
+
+            const parsedContent = isUser ? escapeHtml(content) : marked.parse(content);
+
+            const contentHTML = `
+                <div class="flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[80%]">
+                    <div class="flex items-center gap-2 mb-1 px-1">
+                        <span class="text-xs font-medium text-slate-400">${isUser ? 'Anda' : 'Pazyy AI'}</span>
+                    </div>
+                    <div class="message-bubble relative p-4 rounded-2xl text-sm md:text-base ${
+                        isUser 
+                        ? 'bg-indigo-600 text-white rounded-tr-none shadow-md' 
+                        : 'bg-slate-900 border border-slate-800 text-slate-100 rounded-tl-none prose prose-invert'
+                    }">
+                        ${parsedContent}
+                    </div>
+                    ${!isUser ? `
+                    <div class="flex items-center gap-2 mt-1.5 px-1 text-slate-400 text-xs">
+                        <button class="copy-msg-btn hover:text-white p-1" title="Salin Pesan">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                        <button class="speak-msg-btn hover:text-white p-1" title="Bacakan Pesan">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            msgDiv.innerHTML = isUser ? contentHTML + avatarHTML : avatarHTML + contentHTML;
+            elements.messagesContainer.appendChild(msgDiv);
+
+            if (!isUser) {
+                msgDiv.querySelector('.copy-msg-btn')?.addEventListener('click', () => {
+                    copyToClipboard(content);
+                });
+                msgDiv.querySelector('.speak-msg-btn')?.addEventListener('click', () => {
+                    speakText(content);
+                });
+            }
+
+            msgDiv.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            scrollToBottom();
+            return msgDiv;
+        }
+
+        function appendTypingIndicator() {
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'flex gap-3 md:gap-4 max-w-4xl mx-auto items-start';
+            indicatorDiv.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-md">
+                    P
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div>
+                    <div class="w-2 h-2 rounded-full bg-purple-400 animate-bounce [animation-delay:0.2s]"></div>
+                    <div class="w-2 h-2 rounded-full bg-cyan-400 animate-bounce [animation-delay:0.4s]"></div>
+                </div>
+            `;
+            elements.messagesContainer.appendChild(indicatorDiv);
+            return indicatorDiv;
+        }
+
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        function toggleTTS() {
+            state.ttsEnabled = !state.ttsEnabled;
+            if (state.ttsEnabled) {
+                elements.ttsIcon.className = 'fa-solid fa-volume-high text-indigo-400';
+            } else {
+                elements.ttsIcon.className = 'fa-solid fa-volume-xmark';
+                state.speechSynth.cancel();
+            }
+        }
+
+        function speakText(text) {
+            if (!state.speechSynth) return;
+            state.speechSynth.cancel();
+            const cleanText = text.replace(/```[\s\S]*?```/g, 'Kode program.').replace(/[*_#`]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'id-ID';
+            state.speechSynth.speak(utterance);
+        }
+
+        function toggleSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Browser Anda tidak mendukung Voice Input.");
+                return;
+            }
+
+            if (state.isListening) return;
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID';
+
+            recognition.onstart = () => {
+                state.isListening = true;
+                elements.micIcon.className = 'fa-solid fa-microphone text-rose-500 animate-pulse';
+            };
+
+            recognition.onresult = (e) => {
+                elements.userInput.value = e.results[0][0].transcript;
+                elements.userInput.dispatchEvent(new Event('input'));
+            };
+
+            recognition.onend = () => {
+                state.isListening = false;
+                elements.micIcon.className = 'fa-solid fa-microphone text-base';
+            };
+
+            recognition.start();
+        }
+
+        function scrollToBottom() {
+            elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+        }
+
+        function saveChatsToStorage() {
+            localStorage.setItem('pazyy_chat_history', JSON.stringify(state.chats));
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
